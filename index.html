@@ -62,7 +62,11 @@ img { display: block; max-width: 100%; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
 
 /* ═══════════════════════════════════════════════════
-   SIDEBAR
+   SIDEBAR  —  absolute-positioned sections, bulletproof scroll
+   Top header:  72px
+   CTA button:  60px  (16px margin top + 12px pad*2 + ~20px text = ~60)
+   Logout bar:  72px
+   Nav:         calc(100vh - 72px - 60px - 72px) = calc(100vh - 204px)
 ═══════════════════════════════════════════════════ */
 .sidebar {
   position: fixed;
@@ -73,22 +77,25 @@ img { display: block; max-width: 100%; }
   backdrop-filter: blur(24px);
   border-right: 1px solid var(--card-border);
   z-index: 500;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;                /* clips children to sidebar bounds */
   transform: translateX(calc(-1 * var(--sidebar-w)));
   transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
-  overflow: hidden;
 }
 .sidebar.open {
   transform: translateX(0);
   box-shadow: 4px 0 40px rgba(0,0,0,0.7);
 }
-/* Sidebar top — logo area */
+
+/* ── Top brand row: absolute, fixed height 72px ── */
 .sidebar-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 72px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px 14px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--border-dim);
-  flex-shrink: 0;
+  background: rgba(9,9,18,0.98);
+  z-index: 2;
 }
 .sidebar-brand {
   display: flex; align-items: center; gap: 10px;
@@ -99,8 +106,8 @@ img { display: block; max-width: 100%; }
 }
 .sidebar-logo img { width: 100%; height: 100%; object-fit: cover; }
 .sidebar-name {
-  font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700;
-  letter-spacing: 0.12em; color: var(--text);
+  font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em;
   background: linear-gradient(90deg,
     #b08020 0%, #f0c040 25%, #fff8d0 45%, #ffe066 55%, #f0c040 75%, #b08020 100%);
   background-size: 300% auto;
@@ -111,34 +118,52 @@ img { display: block; max-width: 100%; }
 .sidebar-close {
   background: none; border: none; cursor: pointer;
   color: var(--text-dim); font-size: 18px; padding: 4px;
-  transition: color .2s;
+  transition: color .2s; flex-shrink: 0;
 }
 .sidebar-close:hover { color: var(--gold); }
 
-/* Buy Challenge CTA */
+/* ── Buy Challenge CTA: absolute, sits right below header ── */
 .sidebar-cta {
-  margin: 16px 16px 8px;
+  position: absolute;
+  top: 80px; left: 16px; right: 16px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 20px; border-radius: 6px;
+  padding: 11px 20px; border-radius: 6px;
   background: var(--gold); color: var(--black);
   font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 800;
   letter-spacing: 0.1em; text-transform: uppercase;
   transition: background .2s, box-shadow .2s;
-  flex-shrink: 0;
+  z-index: 2;
 }
 .sidebar-cta:hover {
   background: var(--gold-bright);
   box-shadow: 0 0 24px var(--gold-glow);
 }
 
-/* Nav links list */
+/* ── Nav links: fills the space between CTA and Logout ── */
 .sidebar-nav {
-  flex: 1; overflow-y: auto; padding: 8px 0;
-  scrollbar-width: thin; scrollbar-color: var(--dark3) transparent;
+  position: absolute;
+  top: 136px;
+  left: 0; right: 0;
+  /* height set by JS to window.innerHeight - 136 - 72 */
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 4px 0 24px;  /* extra bottom pad so last item breathes */
+  scrollbar-width: thin; scrollbar-color: var(--gold-dim) rgba(255,255,255,0.04);
 }
-.sidebar-nav::-webkit-scrollbar { width: 4px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.sidebar-nav::-webkit-scrollbar-thumb { background: var(--dark3); border-radius: 2px; }
+/* Fade-out hint at bottom of nav so user knows there's more to scroll */
+.sidebar-nav-fade {
+  position: absolute;
+  left: 0; right: 0;
+  height: 40px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(9,9,18,0.95));
+  z-index: 3;
+  transition: opacity .3s;
+}
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
 .sidebar-nav a {
   display: flex; align-items: center; gap: 14px;
@@ -147,49 +172,52 @@ img { display: block; max-width: 100%; }
   color: var(--text-muted);
   transition: color .18s, background .18s;
   border-left: 3px solid transparent;
-  position: relative;
 }
 .sidebar-nav a:hover {
   color: var(--text);
-  background: rgba(240,192,64,0.04);
+  background: rgba(240,192,64,0.05);
   border-left-color: rgba(240,192,64,0.3);
 }
 .sidebar-nav a.active {
   color: var(--gold);
-  background: rgba(240,192,64,0.07);
+  background: rgba(240,192,64,0.08);
   border-left-color: var(--gold);
 }
 .sidebar-nav .s-icon {
-  font-size: 17px; width: 20px; text-align: center; flex-shrink: 0;
+  font-size: 17px; width: 22px; text-align: center; flex-shrink: 0;
 }
 .sidebar-nav .s-badge {
   margin-left: auto;
   background: var(--blue); color: #fff;
   font-size: 10px; font-weight: 700;
-  padding: 2px 6px; border-radius: 10px;
+  padding: 2px 7px; border-radius: 10px;
 }
 .sidebar-nav .s-lock {
   margin-left: auto; font-size: 12px; color: var(--text-dim);
 }
 .sidebar-divider {
   height: 1px; background: var(--border-dim);
-  margin: 6px 16px;
+  margin: 5px 16px;
 }
 
-/* Logout button */
+/* ── Logout: absolute, pinned to bottom ── */
 .sidebar-logout {
-  margin: 8px 16px 20px;
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 20px; border-radius: 6px;
-  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+  padding: 0 20px;
+  border-top: 1px solid rgba(239,68,68,0.15);
+  background: rgba(239,68,68,0.06);
   color: #ef6060;
   font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
-  transition: background .2s, border-color .2s;
-  flex-shrink: 0; text-decoration: none;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; text-decoration: none;
+  transition: background .2s, color .2s;
+  z-index: 2;
 }
 .sidebar-logout:hover {
-  background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.4); color: #ff8080;
+  background: rgba(239,68,68,0.14); color: #ff8080;
 }
 
 /* Sidebar overlay (backdrop when open on mobile) */
@@ -296,18 +324,7 @@ nav {
   white-space: nowrap;
 }
 
-.nav-links {
-  display: flex; align-items: center; gap: 6px;
-}
-.nav-links a {
-  font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
-  color: var(--text-muted); padding: 6px 14px; border-radius: 4px;
-  transition: color .2s, background .2s;
-}
-.nav-links a:hover { color: var(--text); background: var(--dark3); }
-.nav-links .divider {
-  width: 1px; height: 22px; background: var(--border-dim); margin: 0 6px;
-}
+/* nav-links removed — navigation lives in the sidebar */
 
 .nav-cta {
   font-family: 'Barlow', sans-serif;
@@ -582,7 +599,7 @@ footer { background: var(--dark1); border-top: 1px solid var(--card-border); pad
   </a>
 
   <!-- Nav Links -->
-  <nav class="sidebar-nav">
+  <nav class="sidebar-nav" id="sidebarNav">
     <a href="/dashboard" class="active">
       <span class="s-icon">📊</span> Dashboard
     </a>
@@ -631,6 +648,7 @@ footer { background: var(--dark1); border-top: 1px solid var(--card-border); pad
       <span class="s-icon">👤</span> Account &amp; Billing
     </a>
   </nav>
+  <div class="sidebar-nav-fade" id="navFade"></div>
 
   <!-- Logout -->
   <a href="/logout" class="sidebar-logout">
@@ -660,13 +678,6 @@ footer { background: var(--dark1); border-top: 1px solid var(--card-border); pad
       </div>
       <span class="nav-logo-text">TALON TRADER FUNDING</span>
     </a>
-
-    <ul class="nav-links">
-      <li><a href="#how-it-works">How It Works</a></li>
-      <li><a href="#trade-copier">Trade Copier</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#faq">FAQ</a></li>
-    </ul>
 
     <a href="#pricing" class="nav-cta">Get Funded</a>
   </nav>
@@ -1016,12 +1027,41 @@ footer { background: var(--dark1); border-top: 1px solid var(--card-border); pad
 <script>
   /* ── Sidebar ── */
   const sidebar       = document.getElementById('sidebar');
+  const sidebarNav    = document.getElementById('sidebarNav');
   const sidebarTab    = document.getElementById('sidebarTab');
   const overlay       = document.getElementById('sidebarOverlay');
   const pageWrapper   = document.getElementById('pageWrapper');
   const isDesktop     = () => window.innerWidth > 1024;
 
+  /* Set sidebar and nav heights using actual JS window height — 
+     bypasses any iframe/viewport calc(100vh) issues */
+  function setSidebarHeight() {
+    const h = window.innerHeight;
+    sidebar.style.height = h + 'px';
+    const navH = h - 136 - 72;
+    const safeNavH = Math.max(navH, 100);
+    sidebarNav.style.height = safeNavH + 'px';
+    // position the fade div just above the logout bar
+    const fade = document.getElementById('navFade');
+    if (fade) fade.style.top = (136 + safeNavH - 40) + 'px';
+    updateFade();
+  }
+  function updateFade() {
+    const fade = document.getElementById('navFade');
+    if (!fade) return;
+    const atBottom = sidebarNav.scrollHeight - sidebarNav.scrollTop <= sidebarNav.clientHeight + 4;
+    fade.style.opacity = atBottom ? '0' : '1';
+  }
+  setSidebarHeight();
+  window.addEventListener('resize', setSidebarHeight);
+
+  // Fade updates on nav scroll
+  document.addEventListener('DOMContentLoaded', () => {
+    sidebarNav.addEventListener('scroll', updateFade);
+  });
+
   function openSidebar() {
+    setSidebarHeight();
     sidebar.classList.add('open');
     sidebarTab.classList.add('shifted', 'open-state');
     overlay.classList.add('visible');
