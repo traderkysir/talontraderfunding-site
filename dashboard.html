@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talon Trader Funding — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --black:      #06060a;
+  --dark1:      #0c0c18;
+  --dark2:      #111122;
+  --dark3:      #181830;
+  --card:       #13131f;
+  --card2:      #0f0f1e;
+  --border:     rgba(240,192,64,0.13);
+  --border-dim: rgba(255,255,255,0.06);
+  --gold:       #f0c040;
+  --gold-bright:#ffe066;
+  --gold-dim:   #a07c20;
+  --gold-glow:  rgba(240,192,64,0.15);
+  --text:       #eeeef5;
+  --text-muted: #9090b0;
+  --text-dim:   #505068;
+  --green:      #22c55e;
+  --red:        #ef4444;
+  --blue:       #3b82f6;
+  --sidebar-w:  240px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  display: flex;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--dark1);
+  border-right: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+/* Logo */
+.sb-logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.sb-logo-wordmark {
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.sb-logo-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+/* Account pill */
+.sb-account {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.sb-account-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.sb-account-select {
+  width: 100%;
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+.sb-account-select option { background: var(--dark2); }
+.sb-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+.sb-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.sb-status-dot.live  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.sb-status-dot.error { background: var(--red); }
+.sb-status-text {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Nav */
+.sb-nav {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: 8px 0;
+}
+.sb-nav::-webkit-scrollbar { width: 3px; }
+.sb-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.sb-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 10px 16px 4px;
+}
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+}
+.sb-link:hover { background: var(--gold-glow); color: var(--text); }
+.sb-link.active {
+  background: var(--gold-glow);
+  color: var(--gold);
+  border-left-color: var(--gold);
+}
+.sb-link-icon { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
+
+/* Footer */
+.sb-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-dim);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.sb-footer-firm { font-weight: 600; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════ */
+.main {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--black);
+  display: flex;
+  flex-direction: column;
+}
+.main::-webkit-scrollbar { width: 4px; }
+.main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--dark1);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.topbar-acct {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--dark2);
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border-dim);
+}
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(239,68,68,0.15);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.25);
+  transition: all 0.3s;
+}
+.status-pill.live {
+  background: rgba(34,197,94,0.12);
+  color: var(--green);
+  border-color: rgba(34,197,94,0.25);
+}
+.status-pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.timestamp {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════
+   CONTENT GRID
+═══════════════════════════════════════════════ */
+.content {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+/* Row layouts */
+.row-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.row-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+.row-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+
+/* Stat card */
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.3;
+}
+.stat-card.highlight::before { opacity: 1; }
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.stat-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-value.pos { color: var(--green); }
+.stat-value.neg { color: var(--red); }
+.stat-value.gold { color: var(--gold); }
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Panel card */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--card2);
+}
+.panel-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.panel-body { padding: 16px; }
+
+/* Drawdown bars */
+.dd-section { display: flex; flex-direction: column; gap: 14px; }
+.dd-row {}
+.dd-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.dd-row-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.dd-row-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.dd-bar-track {
+  height: 6px;
+  background: var(--dark3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dd-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width 0.5s ease, background 0.3s;
+}
+.dd-bar-fill.warn { background: #f59e0b; }
+.dd-bar-fill.crit { background: var(--red); }
+
+/* Chart */
+.chart-wrap {
+  width: 100%;
+  height: 120px;
+  position: relative;
+}
+.chart-wrap svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Eval targets */
+.eval-targets { display: flex; flex-direction: column; gap: 10px; }
+.eval-target {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--dark2);
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+}
+.eval-check {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.eval-check.pass {
+  border-color: var(--green);
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+}
+.eval-check.fail {
+  border-color: var(--red);
+  background: rgba(239,68,68,0.1);
+  color: var(--red);
+}
+.eval-target-text { flex: 1; font-size: 12px; color: var(--text-muted); }
+.eval-target-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Fills table */
+.fills-table { width: 100%; border-collapse: collapse; }
+.fills-table th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.fills-table td {
+  padding: 7px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.fills-table tr:last-child td { border-bottom: none; }
+.fill-side-long  { color: var(--green); font-weight: 700; font-size: 10px; }
+.fill-side-short { color: var(--red); font-weight: 700; font-size: 10px; }
+.fill-pnl-pos { color: var(--green); }
+.fill-pnl-neg { color: var(--red); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* Accounts grid */
+.acct-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.acct-card {
+  background: var(--dark2);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.acct-card:hover { border-color: var(--border); background: var(--dark3); }
+.acct-card.selected { border-color: var(--gold); background: var(--gold-glow); }
+.acct-card-id {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.acct-card-bal {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.acct-card-pnl {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: var(--gold-glow);
+  color: var(--gold);
+  border: 1px solid rgba(240,192,64,0.2);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="sb-logo">
+    <div class="sb-logo-wordmark">TALON TRADER<br>FUNDING</div>
+    <div class="sb-logo-sub">TRADER PORTAL</div>
+  </div>
+
+  <div class="sb-account">
+    <div class="sb-account-label">Active Account</div>
+    <select class="sb-account-select" id="acct-switcher" onchange="switchAccount(this.value)">
+      <option value="">— Connecting... —</option>
+    </select>
+    <div class="sb-status-row">
+      <div class="sb-status-dot" id="sb-dot"></div>
+      <div class="sb-status-text" id="sb-status-text">Connecting to Rithmic...</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section-label">Overview</div>
+    <a class="sb-link active" href="dashboard.html">
+      <span class="sb-link-icon">▦</span> Dashboard
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">📈</span> Trade History
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">📊</span> Statistics
+    </a>
+
+    <div class="sb-section-label">Account</div>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">💰</span> Payouts
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">⚡</span> Eval Progress
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">🏆</span> Funded Status
+    </a>
+
+    <div class="sb-section-label">Tools</div>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">🔁</span> OrderClone
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">⚙️</span> Settings
+    </a>
+
+    <div class="sb-section-label">Support</div>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">📋</span> Rules &amp; FAQ
+    </a>
+    <a class="sb-link" href="#">
+      <span class="sb-link-icon">💬</span> Support Chat
+    </a>
+    <a class="sb-link" href="index.html">
+      <span class="sb-link-icon">🌐</span> Public Site
+    </a>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-footer-firm" id="sb-firm">Connecting...</div>
+    <div id="sb-last-update" style="margin-top:3px;">—</div>
+  </div>
+
+</aside>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">DASHBOARD</div>
+      <div class="topbar-acct" id="topbar-acct">—</div>
+    </div>
+    <div class="topbar-right">
+      <div class="timestamp" id="live-timestamp">—</div>
+      <div class="status-pill" id="status-pill">
+        <div class="status-pill-dot"></div>
+        <span id="status-pill-text">OFFLINE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ROW 1: Key stats -->
+    <div class="row-4">
+
+      <div class="stat-card highlight">
+        <div class="stat-label">Account Balance</div>
+        <div class="stat-value" id="live-balance">—</div>
+        <div class="stat-sub" id="live-balance-sub">Starting balance</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Equity</div>
+        <div class="stat-value" id="live-equity">—</div>
+        <div class="stat-sub" id="live-equity-sub">Balance + Open PnL</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Day PnL</div>
+        <div class="stat-value" id="live-day-pnl">—</div>
+        <div class="stat-sub" id="live-day-pnl-sub">Today's realized + open</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Open PnL</div>
+        <div class="stat-value" id="live-open-pnl">—</div>
+        <div class="stat-sub" id="live-net-qty">No open positions</div>
+      </div>
+
+    </div>
+
+    <!-- ROW 2: Drawdown + Equity Chart -->
+    <div class="row-2-1">
+
+      <!-- Equity curve -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Equity Curve</span>
+          <span class="badge" id="chart-badge">LIVE</span>
+        </div>
+        <div class="panel-body">
+          <div class="chart-wrap">
+            <svg id="equity-chart" viewBox="0 0 600 120" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="eq-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f0c040" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#f0c040" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path id="eq-area" fill="url(#eq-grad)" d=""/>
+              <path id="eq-line" fill="none" stroke="#f0c040" stroke-width="1.5" d=""/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Drawdown</span>
+        </div>
+        <div class="panel-body">
+          <div class="dd-section">
+            <div class="dd-row">
+              <div class="dd-row-header">
+                <span class="dd-row-label">Daily Loss Used</span>
+                <span class="dd-row-value" id="dd-daily-val">—</span>
+              </div>
+              <div class="dd-bar-track">
+                <div class="dd-bar-fill" id="dd-daily-bar"></div>
+              </div>
+            </div>
+            <div class="dd-row">
+              <div class="dd-row-header">
+                <span class="dd-row-label">Max Trail Drawdown</span>
+                <span class="dd-row-value" id="dd-max-val">—</span>
+              </div>
+              <div class="dd-bar-track">
+                <div class="dd-bar-fill" id="dd-max-bar"></div>
+              </div>
+            </div>
+            <div class="dd-row">
+              <div class="dd-row-header">
+                <span class="dd-row-label">Buying Power</span>
+                <span class="dd-row-value" id="dd-bp-val">—</span>
+              </div>
+              <div class="dd-bar-track">
+                <div class="dd-bar-fill" id="dd-bp-bar" style="background:var(--blue)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 3: Eval Targets + Accounts + Recent Fills -->
+    <div class="row-3">
+
+      <!-- Eval pass conditions -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Eval Targets</span>
+        </div>
+        <div class="panel-body">
+          <div class="eval-targets">
+            <div class="eval-target">
+              <div class="eval-check" id="ec-profit">?</div>
+              <div class="eval-target-text">Profit Target</div>
+              <div class="eval-target-val" id="ev-profit">—</div>
+            </div>
+            <div class="eval-target">
+              <div class="eval-check" id="ec-daily">?</div>
+              <div class="eval-target-text">Daily Loss Limit</div>
+              <div class="eval-target-val" id="ev-daily">—</div>
+            </div>
+            <div class="eval-target">
+              <div class="eval-check" id="ec-trail">?</div>
+              <div class="eval-target-text">Trailing Drawdown</div>
+              <div class="eval-target-val" id="ev-trail">—</div>
+            </div>
+            <div class="eval-target">
+              <div class="eval-check" id="ec-cons">?</div>
+              <div class="eval-target-text">Consistency Rule</div>
+              <div class="eval-target-val" id="ev-cons">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All accounts -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">All Accounts</span>
+          <span class="badge" id="acct-count-badge">0</span>
+        </div>
+        <div class="panel-body">
+          <div class="acct-cards" id="acct-cards-grid">
+            <div class="empty-state" style="grid-column:span 2">Connecting...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent fills -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Recent Fills</span>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <table class="fills-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>PnL</th>
+              </tr>
+            </thead>
+            <tbody id="fills-tbody">
+              <tr><td colspan="6" class="empty-state">No fills yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+// ── CONFIG — points to your live Vultr server ──────────────────────
+const TALON_SERVER = 'http://144.202.62.179:5100';
+
+// ── State ───────────────────────────────────────────────────────────
+let allAccounts  = {};
+let selectedId   = null;
+let equityHistory = [];
+
+// ── Helpers ─────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmt$(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  const abs = Math.abs(v);
+  const str = abs >= 1000
+    ? '$' + abs.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '$' + abs.toFixed(2);
+  return v < 0 ? '-' + str : str;
+}
+
+function colorClass(v) {
+  if (v > 0)  return 'pos';
+  if (v < 0)  return 'neg';
+  return '';
+}
+
+function setVal(id, val, isNum) {
+  const el = $(id);
+  if (!el) return;
+  if (isNum) {
+    el.textContent = fmt$(val);
+    el.className = el.className.replace(/\bpos\b|\bneg\b|\bgold\b/g, '').trim();
+    if (val > 0) el.classList.add('pos');
+    else if (val < 0) el.classList.add('neg');
+  } else {
+    el.textContent = val;
+  }
+}
+
+// ── Status UI ───────────────────────────────────────────────────────
+function setStatus(connected, text) {
+  const pill  = $('status-pill');
+  const ptext = $('status-pill-text');
+  const dot   = $('sb-dot');
+  const stxt  = $('sb-status-text');
+  if (connected) {
+    pill.className  = 'status-pill live';
+    dot.className   = 'sb-status-dot live';
+  } else {
+    pill.className  = 'status-pill';
+    dot.className   = 'sb-status-dot';
+  }
+  if (ptext) ptext.textContent = text || (connected ? 'LIVE' : 'OFFLINE');
+  if (stxt)  stxt.textContent  = connected ? 'Connected to Rithmic' : (text || 'Disconnected');
+}
+
+// ── Account switcher ─────────────────────────────────────────────────
+function buildSwitcher(accounts) {
+  const sel = $('acct-switcher');
+  if (!sel) return;
+  sel.innerHTML = '';
+  accounts.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value       = a.account_id;
+    opt.textContent = a.account_id;
+    if (a.account_id === selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function switchAccount(aid) {
+  if (!aid) return;
+  selectedId = aid;
+  fetch(TALON_SERVER + '/api/account/' + aid + '/select', {method:'POST'}).catch(()=>{});
+  $('topbar-acct').textContent = aid;
+  if (allAccounts[aid]) updateDashboard(allAccounts[aid]);
+  renderAccountCards();
+}
+
+// ── Account cards ────────────────────────────────────────────────────
+function renderAccountCards() {
+  const grid = $('acct-cards-grid');
+  if (!grid) return;
+  const ids = Object.keys(allAccounts);
+  if (!ids.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:span 2">No accounts found</div>';
+    return;
+  }
+  grid.innerHTML = ids.map(aid => {
+    const a   = allAccounts[aid];
+    const sel = aid === selectedId;
+    const pnl = a.day_pnl || 0;
+    const cls = pnl > 0 ? 'fill-pnl-pos' : pnl < 0 ? 'fill-pnl-neg' : '';
+    return `<div class="acct-card${sel?' selected':''}" onclick="switchAccount('${aid}')">
+      <div class="acct-card-id">${aid}</div>
+      <div class="acct-card-bal">${fmt$(a.balance)}</div>
+      <div class="acct-card-pnl ${cls}">${fmt$(pnl)}</div>
+    </div>`;
+  }).join('');
+  const badge = $('acct-count-badge');
+  if (badge) badge.textContent = ids.length;
+}
+
+// ── Main dashboard update ────────────────────────────────────────────
+function updateDashboard(d) {
+  if (!d) return;
+
+  // Store in allAccounts
+  if (d.account_id) allAccounts[d.account_id] = d;
+
+  // Only render if this is the selected account
+  if (d.account_id && d.account_id !== selectedId) {
+    renderAccountCards();
+    return;
+  }
+
+  const bal  = d.balance  || 0;
+  const eq   = d.equity   || 0;
+  const dpnl = d.day_pnl  || 0;
+  const opnl = d.open_pnl || 0;
+  const qty  = d.net_qty  || 0;
+  const altv = d.altv     || 0;
+  const sbmt = d.starting_balance || 0;
+
+  // ── Stats ──
+  setVal('live-balance', bal, true);
+  $('live-balance').className = 'stat-value'; // neutral
+  if ($('live-balance-sub')) $('live-balance-sub').textContent =
+    sbmt > 0 ? 'Started: ' + fmt$(sbmt) : 'Starting balance';
+
+  setVal('live-equity',  eq,   true);
+  setVal('live-day-pnl', dpnl, true);
+  setVal('live-open-pnl', opnl, true);
+
+  const qtyEl = $('live-net-qty');
+  if (qtyEl) qtyEl.textContent = qty !== 0 ? qty + ' contracts open' : 'No open positions';
+
+  // ── Drawdown bars ──
+  const DAILY_LIMIT = 1500;
+  const MAX_LIMIT   = 3000;
+
+  const dailyUsed = Math.max(0, -(dpnl));
+  const dailyPct  = Math.min(100, (dailyUsed / DAILY_LIMIT) * 100);
+  const ddDailyEl = $('dd-daily-val');
+  const ddDailyBar= $('dd-daily-bar');
+  if (ddDailyEl) ddDailyEl.textContent = fmt$(DAILY_LIMIT - dailyUsed) + ' left';
+  if (ddDailyBar) {
+    ddDailyBar.style.width = dailyPct + '%';
+    ddDailyBar.className = 'dd-bar-fill' + (dailyPct > 80 ? ' crit' : dailyPct > 60 ? ' warn' : '');
+  }
+
+  if (altv > 0 && sbmt > 0) {
+    const maxUsed = Math.max(0, sbmt - altv);
+    const maxPct  = Math.min(100, (maxUsed / MAX_LIMIT) * 100);
+    const ddMaxEl = $('dd-max-val');
+    const ddMaxBar= $('dd-max-bar');
+    if (ddMaxEl) ddMaxEl.textContent = fmt$(altv) + ' floor';
+    if (ddMaxBar) {
+      ddMaxBar.style.width = maxPct + '%';
+      ddMaxBar.className = 'dd-bar-fill' + (maxPct > 80 ? ' crit' : maxPct > 60 ? ' warn' : '');
+    }
+  }
+
+  const bp    = d.buying_power || 0;
+  const bpPct = sbmt > 0 ? Math.min(100, (bp / sbmt) * 100) : 50;
+  const ddBpEl = $('dd-bp-val');
+  if (ddBpEl) ddBpEl.textContent = fmt$(bp);
+  const ddBpBar = $('dd-bp-bar');
+  if (ddBpBar) ddBpBar.style.width = bpPct + '%';
+
+  // ── Eval targets (rough indicators) ──
+  const PROFIT_TARGET = 3000;
+  const profitPass = bal - sbmt >= PROFIT_TARGET;
+  const dailyPass  = dailyUsed < DAILY_LIMIT;
+  const trailPass  = altv > 0 ? (sbmt - altv) < MAX_LIMIT : true;
+  const consPass   = Math.abs(dpnl) < (sbmt * 0.03);
+
+  function setCheck(checkId, labelId, pass, text) {
+    const c = $(checkId);
+    if (c) { c.textContent = pass ? '✓' : '✗'; c.className = 'eval-check ' + (pass ? 'pass' : 'fail'); }
+    const v = $(labelId);
+    if (v) v.textContent = text;
+  }
+  setCheck('ec-profit', 'ev-profit', profitPass,
+    fmt$(Math.max(0, PROFIT_TARGET - (bal - sbmt))) + ' to go');
+  setCheck('ec-daily', 'ev-daily', dailyPass,
+    fmt$(DAILY_LIMIT - dailyUsed) + ' remaining');
+  setCheck('ec-trail', 'ev-trail', trailPass,
+    altv > 0 ? fmt$(altv) + ' floor' : 'N/A');
+  setCheck('ec-cons', 'ev-cons', consPass, consPass ? 'Within limit' : 'Review needed');
+
+  // ── Equity chart ──
+  if (d.equity_history && d.equity_history.length > 1) {
+    equityHistory = d.equity_history;
+    drawChart(equityHistory);
+  }
+
+  // ── Timestamp ──
+  const tsEl = $('live-timestamp');
+  if (tsEl && d.last_update) {
+    tsEl.textContent = 'Updated ' + d.last_update.substr(11, 8) + ' UTC';
+  }
+  const sbFirm = $('sb-firm');
+  if (sbFirm && d.firm_name) sbFirm.textContent = d.firm_name;
+  const sbUpd = $('sb-last-update');
+  if (sbUpd && d.last_update) sbUpd.textContent = d.last_update.substr(11, 8);
+
+  renderAccountCards();
+}
+
+// ── Equity chart SVG ─────────────────────────────────────────────────
+function drawChart(history) {
+  const W = 600, H = 120, PAD = 8;
+  const vals = history.map(h => h.v);
+  const mn   = Math.min(...vals);
+  const mx   = Math.max(...vals);
+  const rng  = mx - mn || 1;
+  const n    = vals.length;
+
+  const pts = vals.map((v, i) => {
+    const x = PAD + (i / (n - 1)) * (W - PAD * 2);
+    const y = H - PAD - ((v - mn) / rng) * (H - PAD * 2);
+    return [x, y];
+  });
+
+  const lineD = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
+  const areaD = `${lineD} L${pts[n-1][0]},${H} L${pts[0][0]},${H} Z`;
+
+  const lineEl = $('eq-line');
+  const areaEl = $('eq-area');
+  if (lineEl) lineEl.setAttribute('d', lineD);
+  if (areaEl) areaEl.setAttribute('d', areaD);
+}
+
+// ── Fills ───────────────────────────────────────────────────────────
+function addFillRow(fill) {
+  const tbody = $('fills-tbody');
+  if (!tbody) return;
+  // Remove empty state row
+  const empty = tbody.querySelector('td[colspan]');
+  if (empty) empty.closest('tr').remove();
+
+  const pnlCls = fill.pnl >= 0 ? 'fill-pnl-pos' : 'fill-pnl-neg';
+  const sideCls = fill.side === 'LONG' ? 'fill-side-long' : 'fill-side-short';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${fill.time}</td>
+    <td><strong>${fill.symbol}</strong></td>
+    <td class="${sideCls}">${fill.side}</td>
+    <td>${fill.qty}</td>
+    <td>$${fill.price ? fill.price.toFixed(2) : '—'}</td>
+    <td class="${pnlCls}">${fill.pnl ? fmt$(fill.pnl) : '—'}</td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+  while (tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
+}
+
+// ── Socket.IO ────────────────────────────────────────────────────────
+let socket = null;
+
+function connectSocket() {
+  socket = io(TALON_SERVER, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 3000,
+    reconnectionAttempts: 99,
+  });
+
+  socket.on('connect', () => {
+    setStatus(true, 'LIVE');
+    socket.emit('request_snapshot');
+  });
+
+  socket.on('disconnect', () => {
+    setStatus(false, 'OFFLINE');
+  });
+
+  socket.on('connect_error', () => {
+    setStatus(false, 'RECONNECTING...');
+  });
+
+  socket.on('status_change', d => {
+    if (d.connected) {
+      setStatus(true, 'LIVE');
+      if (d.firm_name) {
+        const sbFirm = $('sb-firm');
+        if (sbFirm) sbFirm.textContent = d.firm_name;
+      }
+    } else {
+      setStatus(false, d.connecting ? 'CONNECTING...' : 'OFFLINE');
+    }
+  });
+
+  socket.on('account_update', d => {
+    if (d.account_id) allAccounts[d.account_id] = d;
+    if (!selectedId && d.account_id) {
+      selectedId = d.account_id;
+      $('topbar-acct').textContent = selectedId;
+      const sel = $('acct-switcher');
+      if (sel) sel.value = selectedId;
+    }
+    if (d.account_id === selectedId || !selectedId) {
+      updateDashboard(d);
+    }
+  });
+
+  socket.on('accounts_discovered', d => {
+    const accts = d.accounts || [];
+    if (!accts.length) return;
+    buildSwitcher(accts);
+    const badge = $('acct-count-badge');
+    if (badge) badge.textContent = accts.length;
+    if (!selectedId && accts.length) {
+      selectedId = accts[0].account_id;
+      $('topbar-acct').textContent = selectedId;
+      const sel = $('acct-switcher');
+      if (sel) sel.value = selectedId;
+    }
+    if (d.firm_name) {
+      const sbFirm = $('sb-firm');
+      if (sbFirm) sbFirm.textContent = d.firm_name;
+    }
+    renderAccountCards();
+  });
+
+  socket.on('new_fill', fill => addFillRow(fill));
+
+  socket.on('activity_log', d => {
+    console.log('[Talon]', d.level?.toUpperCase(), d.message);
+  });
+}
+
+// ── REST fallback poll every 10s ──────────────────────────────────
+async function restPoll() {
+  if (!selectedId) return;
+  try {
+    const r = await fetch(TALON_SERVER + '/api/account/' + selectedId);
+    if (r.ok) {
+      const d = await r.json();
+      if (d.account_id) {
+        allAccounts[d.account_id] = d;
+        updateDashboard(d);
+      }
+    }
+  } catch(e) {}
+}
+
+// ── Load initial fills ────────────────────────────────────────────
+async function loadFills() {
+  try {
+    const r = await fetch(TALON_SERVER + '/api/accounts');
+    if (r.ok) {
+      const accts = await r.json();
+      accts.forEach(a => { allAccounts[a.account_id] = a; });
+      if (accts.length) {
+        buildSwitcher(accts);
+        if (!selectedId) {
+          selectedId = accts[0].account_id;
+          $('topbar-acct').textContent = selectedId;
+          const sel = $('acct-switcher');
+          if (sel) sel.value = selectedId;
+        }
+        renderAccountCards();
+      }
+    }
+  } catch(e) {}
+
+  if (selectedId) {
+    try {
+      const r = await fetch(TALON_SERVER + '/api/account/fills?account_id=' + selectedId);
+      if (r.ok) {
+        const fills = await r.json();
+        fills.slice(0, 10).forEach(addFillRow);
+      }
+    } catch(e) {}
+  }
+}
+
+// ── Boot ─────────────────────────────────────────────────────────
+connectSocket();
+loadFills();
+setInterval(restPoll, 10000);
+</script>
+</body>
+</html>

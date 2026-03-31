@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talon Trader Funding — Your Capital. Your Rules. Your Profit.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black:     #07070e;
+    --dark1:     #0d0d1a;
+    --dark2:     #121220;
+    --dark3:     #1a1a2e;
+    --gold:      #c9a347;
+    --gold-bright: #f0c84a;
+    --gold-dim:  #8a6e2f;
+    --gold-glow: rgba(201,163,71,0.15);
+    --text:      #e8e8f0;
+    --text-muted:#9090a8;
+    --text-dim:  #5a5a72;
+    --border:    rgba(201,163,71,0.18);
+    --border-dim:rgba(255,255,255,0.06);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--black);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 5vw;
+    height: 68px;
+    background: rgba(7,7,14,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px; font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links {
+    display: flex; gap: 32px; list-style: none;
+  }
+  .nav-links a {
+    font-size: 14px; font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px; font-weight: 600;
+    padding: 9px 22px;
+    background: var(--gold);
+    color: var(--black);
+    border: none; border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+  }
+  .nav-cta:hover { background: var(--gold-bright); transform: translateY(-1px); }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 5vw 80px;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 30%, rgba(201,163,71,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,163,71,0.04) 0%, transparent 60%),
+      linear-gradient(180deg, var(--black) 0%, var(--dark1) 50%, var(--black) 100%);
+    z-index: 0;
+  }
+  #heroCanvas {
+    position: absolute; inset: 0;
+    z-index: 1; opacity: 0.35;
+  }
+  .hero-content { position: relative; z-index: 2; max-width: 860px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 20px;
+    margin-bottom: 28px;
+    background: rgba(201,163,71,0.06);
+  }
+  .hero-badge::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(1.3)}
+  }
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(48px, 8vw, 88px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .hero-sub {
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 300;
+    color: var(--text-muted);
+    max-width: 580px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+  .hero-actions {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 72px;
+  }
+  .btn-primary {
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px; font-weight: 600;
+    padding: 14px 32px;
+    background: var(--gold);
+    color: var(--black);
+    border: none; border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .2s, transform .15s, box-shadow .2s;
+  }
+  .btn-primary:hover {
+    background: var(--gold-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(201,163,71,0.3);
+  }
+  .btn-outline {
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px; font-weight: 500;
+    padding: 13px 30px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition: border-color .2s, color .2s;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    display: flex; gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(13,13,26,0.8);
+    backdrop-filter: blur(8px);
+  }
+  .stat-item {
+    flex: 1;
+    padding: 20px 28px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Oswald', sans-serif;
+    font-size: 32px; font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* ─── SECTION LAYOUT ─── */
+  section { padding: 100px 5vw; }
+  .section-tag {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+    display: block;
+  }
+  h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    margin-bottom: 16px;
+  }
+  .section-lead {
+    font-size: 17px; font-weight: 300;
+    color: var(--text-muted);
+    max-width: 540px;
+    margin-bottom: 56px;
+    line-height: 1.7;
+  }
+  .text-center { text-align: center; }
+  .text-center .section-lead { margin-left: auto; margin-right: auto; }
+
+  /* ─── FEATURES ─── */
+  #features { background: var(--dark1); }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border-dim);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .feature-card {
+    background: var(--dark1);
+    padding: 36px 32px;
+    transition: background .25s;
+  }
+  .feature-card:hover { background: var(--dark2); }
+  .feature-icon {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    background: var(--gold-glow);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+    font-size: 20px;
+  }
+  .feature-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px; font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .feature-desc {
+    font-size: 14px; font-weight: 400;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  /* ─── HOW IT WORKS ─── */
+  #how { background: var(--black); }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    position: relative;
+  }
+  .step {
+    position: relative;
+    padding: 36px 28px;
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    background: var(--dark1);
+    transition: border-color .25s, transform .2s;
+  }
+  .step:hover {
+    border-color: var(--border);
+    transform: translateY(-3px);
+  }
+  .step-num {
+    font-family: 'Oswald', sans-serif;
+    font-size: 52px; font-weight: 700;
+    color: var(--gold);
+    opacity: 0.25;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .step-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px; font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .step-desc {
+    font-size: 14px; color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  /* ─── PRICING ─── */
+  #pricing { background: var(--dark1); }
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .plan {
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--dark2);
+    transition: transform .2s, border-color .2s;
+  }
+  .plan:hover {
+    transform: translateY(-4px);
+    border-color: var(--border);
+  }
+  .plan.featured {
+    border-color: var(--gold);
+    background: var(--dark1);
+    transform: scale(1.03);
+  }
+  .plan.featured:hover { transform: scale(1.03) translateY(-4px); }
+  .plan-badge {
+    background: var(--gold);
+    color: var(--black);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 6px 14px;
+    text-align: center;
+  }
+  .plan-inner { padding: 28px 24px; }
+  .plan-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .plan-size {
+    font-family: 'Oswald', sans-serif;
+    font-size: 38px; font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .plan-price-row {
+    display: flex; align-items: baseline; gap: 6px;
+    margin-bottom: 24px;
+  }
+  .plan-price {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px; font-weight: 600;
+    color: var(--gold);
+  }
+  .plan-period {
+    font-size: 13px; color: var(--text-dim);
+  }
+  .plan-features {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+  .plan-features li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: var(--text-muted);
+    padding: 5px 0;
+    border-bottom: 0.5px solid var(--border-dim);
+  }
+  .plan-features li:last-child { border-bottom: none; }
+  .check {
+    color: var(--gold);
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .plan-btn {
+    display: block; width: 100%;
+    text-align: center;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px; font-weight: 600;
+    padding: 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: all .2s;
+    cursor: pointer;
+  }
+  .plan-btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .plan-btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .plan-btn-gold {
+    background: var(--gold);
+    color: var(--black);
+    border: 1px solid var(--gold);
+  }
+  .plan-btn-gold:hover { background: var(--gold-bright); }
+
+  /* ─── RULES STRIP ─── */
+  .rules-strip {
+    background: var(--dark3);
+    border-top: 1px solid var(--border-dim);
+    border-bottom: 1px solid var(--border-dim);
+    padding: 32px 5vw;
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .rule-item { text-align: center; }
+  .rule-val {
+    font-family: 'Oswald', sans-serif;
+    font-size: 26px; font-weight: 600;
+    color: var(--gold);
+  }
+  .rule-label {
+    font-size: 12px; color: var(--text-muted);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* ─── FAQ ─── */
+  #faq { background: var(--black); }
+  .faq-list { max-width: 720px; }
+  .faq-item {
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .faq-q {
+    width: 100%;
+    text-align: left;
+    background: none; border: none;
+    padding: 22px 0;
+    font-family: 'Barlow', sans-serif;
+    font-size: 16px; font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+    transition: color .2s;
+  }
+  .faq-q:hover { color: var(--gold); }
+  .faq-icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: var(--gold);
+    transition: transform .25s;
+  }
+  .faq-item.open .faq-icon { transform: rotate(45deg); }
+  .faq-a {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .3s ease, padding .3s;
+  }
+  .faq-item.open .faq-a { max-height: 300px; }
+  .faq-a p {
+    font-size: 15px; color: var(--text-muted);
+    padding-bottom: 22px;
+    line-height: 1.7;
+  }
+
+  /* ─── FINAL CTA ─── */
+  .final-cta {
+    background: var(--dark1);
+    padding: 120px 5vw;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .final-cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,163,71,0.07) 0%, transparent 70%);
+  }
+  .final-cta-inner { position: relative; z-index: 1; }
+  .final-cta h2 { margin-bottom: 16px; }
+  .final-cta p {
+    font-size: 17px; font-weight: 300;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--black);
+    border-top: 1px solid var(--border-dim);
+    padding: 40px 5vw;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 32px;
+  }
+  .footer-brand p {
+    font-size: 13px; color: var(--text-dim);
+    margin-top: 8px; max-width: 300px;
+    line-height: 1.65;
+  }
+  .footer-links {
+    display: flex; gap: 48px; flex-wrap: wrap;
+  }
+  .footer-col h4 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .footer-col a {
+    display: block;
+    font-size: 13px; color: var(--text-dim);
+    text-decoration: none;
+    margin-bottom: 8px;
+    transition: color .2s;
+  }
+  .footer-col a:hover { color: var(--gold); }
+  .footer-bottom {
+    border-top: 1px solid var(--border-dim);
+    margin-top: 40px; padding-top: 24px;
+    font-size: 12px; color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  /* ─── TALON SVG LOGO ─── */
+  .talon-icon { width: 28px; height: 28px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    .nav-links { display: none; }
+    .stats-bar { flex-direction: column; }
+    .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-item:last-child { border-bottom: none; }
+    .footer-inner { flex-direction: column; }
+    .plan.featured { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg class="talon-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2 C14 2 8 6 8 13 C8 17 10 19.5 12 21 L10 26 L13 24 L14 27 L15 24 L18 26 L16 21 C18 19.5 20 17 20 13 C20 6 14 2 14 2 Z" fill="#c9a347" opacity="0.9"/>
+      <path d="M11 13 C11 13 7 15 6 20 L8.5 18.5 L9 22 L11.5 19.5" fill="#c9a347" opacity="0.6"/>
+      <path d="M17 13 C17 13 21 15 22 20 L19.5 18.5 L19 22 L16.5 19.5" fill="#c9a347" opacity="0.6"/>
+    </svg>
+    TALON <span>TRADER</span> FUNDING
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Why Talon</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#pricing">Challenges</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="#pricing" class="nav-cta">Start Challenge</a>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">Now Accepting Traders — Limited Spots Available</div>
+    <h1>They Provide<br>the <em>Challenge.</em><br>We Fund <em>the Rest.</em></h1>
+    <p class="hero-sub">
+      Pass a two-phase evaluation. Earn up to a 90% profit split. Scale to $400K in funded capital. No time limits. No drama. Just execution.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">View Challenges →</a>
+      <a href="#how" class="btn-outline">See How It Works</a>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-number" data-target="90">0%</div>
+        <div class="stat-label">Max Profit Split</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="24" data-suffix="hr">0hr</div>
+        <div class="stat-label">Payout Processing</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="400" data-prefix="$" data-suffix="K">$0K</div>
+        <div class="stat-label">Max Funded Capital</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="0">0</div>
+        <div class="stat-label">Time Limits</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section id="features">
+  <div class="text-center">
+    <span class="section-tag">// Why Talon Trader Funding</span>
+    <h2>Built for Traders<br>Who Actually Execute</h2>
+    <p class="section-lead">We strip away everything that doesn't serve the trader. What remains is the cleanest prop structure in the market.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">90% Profit Split</div>
+      <p class="feature-desc">Start at 80% and scale to 90% as your account grows. Your talent earns what it deserves — not the other way around.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⏱</div>
+      <div class="feature-title">No Time Limits</div>
+      <p class="feature-desc">Take the time you need to execute your strategy properly. We removed time pressure because good trading doesn't work on a deadline.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <div class="feature-title">Scaling Plan</div>
+      <p class="feature-desc">Hit your targets and we scale your account — up to $400,000 in funded capital. Growth that matches your skill, not arbitrary limits.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏦</div>
+      <div class="feature-title">24-Hour Payouts</div>
+      <p class="feature-desc">Request a withdrawal and receive it within 24 hours. Bi-weekly payout minimums. Your profits hit your account — fast.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-title">ES · NQ · CL Focus</div>
+      <p class="feature-desc">Built by futures traders, for futures traders. Full support for ES, NQ, CL, and all CME-traded instruments. Trade what you know.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Transparent Rules</div>
+      <p class="feature-desc">No hidden clauses. No gotcha resets. Every rule is visible before you fund. If we can't explain a rule in plain English, it doesn't exist.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ HOW IT WORKS ═══════════ -->
+<section id="how">
+  <div>
+    <span class="section-tag">// How It Works</span>
+    <h2>From Challenge to<br>Funded in 4 Steps</h2>
+    <p class="section-lead">A straightforward evaluation that tests real skill — not luck, not endurance, not tolerance for punishment.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Choose Your Account Size</div>
+      <p class="step-desc">Select a challenge from $25K to $200K. One-time fee, no subscription. Your capital ceiling is your choice.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">Pass Phase 1</div>
+      <p class="step-desc">Hit an 8% profit target. Respect the 5% daily drawdown and 10% max drawdown. No time limit — trade at your pace.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Pass Phase 2</div>
+      <p class="step-desc">A 5% profit target confirms your consistency. Same drawdown rules. Same no-time-limit policy. Same clean environment.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-title">Get Funded & Scale</div>
+      <p class="step-desc">You're live. Keep up to 90% of profits. Request withdrawals within 24 hours. Hit milestones and we scale your account.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ RULES STRIP ═══════════ -->
+<div class="rules-strip">
+  <div class="rule-item">
+    <div class="rule-val">8%</div>
+    <div class="rule-label">Phase 1 Target</div>
+  </div>
+  <div class="rule-item">
+    <div class="rule-val">5%</div>
+    <div class="rule-label">Phase 2 Target</div>
+  </div>
+  <div class="rule-item">
+    <div class="rule-val">5%</div>
+    <div class="rule-label">Daily Drawdown</div>
+  </div>
+  <div class="rule-item">
+    <div class="rule-val">10%</div>
+    <div class="rule-label">Max Drawdown</div>
+  </div>
+  <div class="rule-item">
+    <div class="rule-val">∞</div>
+    <div class="rule-label">Time Limit</div>
+  </div>
+  <div class="rule-item">
+    <div class="rule-val">80–90%</div>
+    <div class="rule-label">Profit Split</div>
+  </div>
+</div>
+
+<!-- ═══════════ PRICING ═══════════ -->
+<section id="pricing">
+  <div class="text-center">
+    <span class="section-tag">// Challenge Plans</span>
+    <h2>Choose Your Battlefield</h2>
+    <p class="section-lead">One-time fee per challenge. No monthly subscriptions. No penalty for failing — reset at a reduced fee anytime.</p>
+  </div>
+  <div class="plans-grid">
+
+    <div class="plan">
+      <div class="plan-inner">
+        <div class="plan-name">Talon 25K</div>
+        <div class="plan-size">$25,000</div>
+        <div class="plan-price-row">
+          <div class="plan-price">$99</div>
+          <div class="plan-period">one-time</div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> $25K funded account</li>
+          <li><span class="check">✦</span> 8% Phase 1 target</li>
+          <li><span class="check">✦</span> 5% Phase 2 target</li>
+          <li><span class="check">✦</span> 80% profit split</li>
+          <li><span class="check">✦</span> No time limit</li>
+          <li><span class="check">✦</span> 24hr payouts</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline">Start Challenge →</a>
+      </div>
+    </div>
+
+    <div class="plan">
+      <div class="plan-inner">
+        <div class="plan-name">Talon 50K</div>
+        <div class="plan-size">$50,000</div>
+        <div class="plan-price-row">
+          <div class="plan-price">$159</div>
+          <div class="plan-period">one-time</div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> $50K funded account</li>
+          <li><span class="check">✦</span> 8% Phase 1 target</li>
+          <li><span class="check">✦</span> 5% Phase 2 target</li>
+          <li><span class="check">✦</span> 80% profit split</li>
+          <li><span class="check">✦</span> No time limit</li>
+          <li><span class="check">✦</span> 24hr payouts</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline">Start Challenge →</a>
+      </div>
+    </div>
+
+    <div class="plan featured">
+      <div class="plan-badge">Most Popular</div>
+      <div class="plan-inner">
+        <div class="plan-name">Talon 100K</div>
+        <div class="plan-size">$100,000</div>
+        <div class="plan-price-row">
+          <div class="plan-price">$259</div>
+          <div class="plan-period">one-time</div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> $100K funded account</li>
+          <li><span class="check">✦</span> 8% Phase 1 target</li>
+          <li><span class="check">✦</span> 5% Phase 2 target</li>
+          <li><span class="check">✦</span> 85% profit split</li>
+          <li><span class="check">✦</span> No time limit</li>
+          <li><span class="check">✦</span> 24hr payouts</li>
+          <li><span class="check">✦</span> Scaling plan eligible</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-gold">Start Challenge →</a>
+      </div>
+    </div>
+
+    <div class="plan">
+      <div class="plan-inner">
+        <div class="plan-name">Talon 200K</div>
+        <div class="plan-size">$200,000</div>
+        <div class="plan-price-row">
+          <div class="plan-price">$399</div>
+          <div class="plan-period">one-time</div>
+        </div>
+        <ul class="plan-features">
+          <li><span class="check">✦</span> $200K funded account</li>
+          <li><span class="check">✦</span> 8% Phase 1 target</li>
+          <li><span class="check">✦</span> 5% Phase 2 target</li>
+          <li><span class="check">✦</span> 90% profit split</li>
+          <li><span class="check">✦</span> No time limit</li>
+          <li><span class="check">✦</span> 24hr payouts</li>
+          <li><span class="check">✦</span> Scaling to $400K</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline">Start Challenge →</a>
+      </div>
+    </div>
+
+  </div>
+  <p style="text-align:center; margin-top: 32px; font-size: 13px; color: var(--text-dim);">
+    All plans include a free reset within 14 days of purchase. Challenge fees are refunded upon your first funded withdrawal.
+  </p>
+</section>
+
+<!-- ═══════════ FAQ ═══════════ -->
+<section id="faq">
+  <span class="section-tag">// Common Questions</span>
+  <h2>FAQ</h2>
+  <div class="faq-list">
+
+    <div class="faq-item">
+      <button class="faq-q">
+        Can I trade ES, NQ, and CL?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Yes — all CME-traded futures are fully supported including ES, NQ, CL, GC, and micro contracts. We built this platform for futures traders specifically, so there are no restrictions on which instruments you can trade within your chosen platform and data provider.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">
+        What happens if I fail a phase?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>If you breach a rule or miss a target, you can reset your challenge at a reduced fee — no need to repurchase. If you fail within the first 14 days, your first reset is free. We believe in giving traders a fair shot to show what they can do.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">
+        Is there a minimum trading day requirement?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>We require a minimum of 5 trading days per phase to ensure consistency. Beyond that, there are no minimum or maximum day requirements. Trade at your own pace — we removed the time clock entirely.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">
+        How does the scaling plan work?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Once funded on the 100K or 200K plan, you become eligible for our scaling program. Achieve 10% profits over any 3-month rolling period and your account size increases by 25%. Maximum funded capital is $400,000. Your profit split increases to 90% at $200K and above.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">
+        How are payouts processed?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Payout requests are processed within 24 hours, paid to your bank account or crypto wallet. There are no minimums on withdrawal amounts during the first payout, and your challenge fee is fully refunded on your first funded withdrawal.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">
+        Is news trading and holding overnight allowed?
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a">
+        <p>Yes on both. We do not restrict news trading or overnight holding. You manage your risk — our drawdown rules are your only guardrail. How and when you trade within those rules is entirely your decision.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════ FINAL CTA ═══════════ -->
+<div class="final-cta">
+  <div class="final-cta-inner">
+    <span class="section-tag" style="display:block;text-align:center;">// Ready to Launch</span>
+    <h2>Prove Your Edge.<br>Own Your Profit.</h2>
+    <p>Join traders who chose Talon Trader Funding.<br>Your capital is waiting. Start your challenge today.</p>
+    <a href="#pricing" class="btn-primary">View Challenges →</a>
+  </div>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo" style="text-decoration:none;">
+        TALON <span>TRADER</span> FUNDING
+      </a>
+      <p>A Wyoming LLC. Built by futures traders, for futures traders. They provide the capital. We provide the freedom.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="#features">Why Talon</a>
+        <a href="#how">How It Works</a>
+        <a href="#pricing">Challenges</a>
+        <a href="#">Scaling Plan</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About Us</a>
+        <a href="#">Blog</a>
+        <a href="#">Affiliate Program</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Risk Disclosure</a>
+        <a href="#">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <strong>Risk Disclosure:</strong> Futures trading involves substantial risk of loss and is not suitable for all investors. Past performance is not indicative of future results. Talon Trader Funding provides simulated trading environments for evaluation purposes. Funded accounts trade on behalf of Talon Trader Funding LLC. You are not trading your own capital. All trading results are hypothetical unless otherwise stated. © 2026 Talon Trader Funding LLC. All rights reserved. | talontraderfunding.com
+  </div>
+</footer>
+
+<script>
+// ─── PARTICLE CANVAS ───
+const canvas = document.getElementById('heroCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function createParticles() {
+  particles = [];
+  const count = Math.floor(window.innerWidth / 12);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2 + 0.3,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.6 + 0.1
+    });
+  }
+}
+createParticles();
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(201,163,71,${p.alpha})`;
+    ctx.fill();
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+  });
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ─── STAT COUNTER ───
+function animateCounters() {
+  document.querySelectorAll('[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '%';
+    let current = 0;
+    const step = target / 60;
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = prefix + Math.round(current) + suffix;
+      if (current >= target) clearInterval(interval);
+    }, 16);
+  });
+}
+const heroObs = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) { animateCounters(); heroObs.disconnect(); }
+}, { threshold: 0.3 });
+heroObs.observe(document.querySelector('.stats-bar'));
+
+// ─── FAQ ACCORDION ───
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+</script>
+</body>
+</html>
