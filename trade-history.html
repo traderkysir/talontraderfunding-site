@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talon Trader Funding — Trade History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --black:      #06060a;
+  --dark1:      #0c0c18;
+  --dark2:      #111122;
+  --dark3:      #181830;
+  --card:       #13131f;
+  --card2:      #0f0f1e;
+  --border:     rgba(240,192,64,0.13);
+  --border-dim: rgba(255,255,255,0.06);
+  --gold:       #f0c040;
+  --gold-bright:#ffe066;
+  --gold-dim:   #a07c20;
+  --gold-glow:  rgba(240,192,64,0.15);
+  --text:       #eeeef5;
+  --text-muted: #9090b0;
+  --text-dim:   #505068;
+  --green:      #22c55e;
+  --red:        #ef4444;
+  --blue:       #3b82f6;
+  --sidebar-w:  240px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  display: flex;
+}
+a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--dark1);
+  border-right: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sb-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border-dim); }
+.sb-logo-wordmark {
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.12em; color: var(--gold);
+  text-transform: uppercase; line-height: 1.2;
+}
+.sb-logo-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; margin-top: 2px; }
+.sb-account { padding: 12px 16px; border-bottom: 1px solid var(--border-dim); }
+.sb-account-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.sb-account-select {
+  width: 100%; background: var(--dark2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600; padding: 6px 8px; border-radius: 4px; cursor: pointer; outline: none;
+}
+.sb-account-select option { background: var(--dark2); }
+.sb-status-row { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
+.sb-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: background 0.3s; }
+.sb-status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.sb-status-text { font-size: 11px; color: var(--text-muted); }
+.sb-nav { overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 8px 0; }
+.sb-nav::-webkit-scrollbar { width: 3px; }
+.sb-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.sb-section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); padding: 10px 16px 4px; }
+.sb-link {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer;
+  transition: all 0.15s; border-left: 2px solid transparent; white-space: nowrap;
+}
+.sb-link:hover { background: var(--gold-glow); color: var(--text); }
+.sb-link.active { background: var(--gold-glow); color: var(--gold); border-left-color: var(--gold); }
+.sb-link-icon { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
+.sb-footer { padding: 12px 16px; border-top: 1px solid var(--border-dim); font-size: 11px; color: var(--text-dim); }
+.sb-footer-firm { font-weight: 600; color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════════ */
+.main { flex: 1; height: 100vh; overflow-y: auto; overflow-x: hidden; background: var(--black); display: flex; flex-direction: column; }
+.main::-webkit-scrollbar { width: 4px; }
+.main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Top bar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; border-bottom: 1px solid var(--border-dim);
+  background: var(--dark1); flex-shrink: 0; position: sticky; top: 0; z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-title { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0.08em; }
+.topbar-acct { font-size: 12px; color: var(--text-muted); background: var(--dark2); padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border-dim); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+  background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.25); transition: all 0.3s;
+}
+.status-pill.live { background: rgba(34,197,94,0.12); color: var(--green); border-color: rgba(34,197,94,0.25); }
+.status-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.timestamp { font-size: 11px; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; }
+
+/* Content */
+.content { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+
+/* Summary cards */
+.summary-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; position: relative; overflow: hidden;
+}
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); opacity: 0.3; }
+.stat-card.highlight::before { opacity: 1; }
+.stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.stat-value { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+.stat-value.pos { color: var(--green); }
+.stat-value.neg { color: var(--red); }
+.stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Panel */
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border-dim); background: var(--card2);
+}
+.panel-title { font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.panel-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Account picker */
+.acct-picker {
+  background: var(--dark2); border: 1px solid var(--border); color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 4px 8px; border-radius: 4px; cursor: pointer; outline: none;
+}
+.acct-picker option { background: var(--dark2); }
+
+/* Btn */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 12px;
+  border-radius: 4px; cursor: pointer; border: none; transition: all 0.15s;
+}
+.btn-gold { background: var(--gold); color: #000; }
+.btn-gold:hover { background: var(--gold-bright); }
+.btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border-dim); }
+.btn-outline:hover { border-color: var(--border); color: var(--text); }
+
+/* Daily summary table */
+.daily-table { width: 100%; border-collapse: collapse; }
+.daily-table th {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim); text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--border-dim);
+}
+.daily-table td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.daily-table tr:last-child td { border-bottom: none; }
+.daily-table tr:hover td { background: rgba(240,192,64,0.04); }
+.day-date { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; color: var(--text); }
+.day-bar-cell { width: 160px; }
+.day-bar-track { height: 5px; background: var(--dark3); border-radius: 3px; overflow: hidden; }
+.day-bar-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.4s; }
+.day-bar-fill.neg { background: var(--red); }
+
+/* Fills table */
+.fills-table { width: 100%; border-collapse: collapse; }
+.fills-table th {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-dim); text-align: left; padding: 8px 14px; border-bottom: 1px solid var(--border-dim);
+  position: sticky; top: 0; background: var(--card2); z-index: 2;
+}
+.fills-table td { padding: 8px 14px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.fills-table tr:last-child td { border-bottom: none; }
+.fills-table tr:hover td { background: rgba(240,192,64,0.04); }
+.side-long  { color: var(--green); font-weight: 700; font-size: 10px; letter-spacing: 0.06em; }
+.side-short { color: var(--red);   font-weight: 700; font-size: 10px; letter-spacing: 0.06em; }
+.pnl-pos { color: var(--green); font-weight: 600; }
+.pnl-neg { color: var(--red);   font-weight: 600; }
+.sym { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
+
+/* Filter bar */
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-btn {
+  font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
+  cursor: pointer; border: 1px solid var(--border-dim); background: transparent;
+  color: var(--text-muted); transition: all 0.15s; font-family: 'Barlow', sans-serif;
+}
+.filter-btn:hover { border-color: var(--border); color: var(--text); }
+.filter-btn.active { background: var(--gold-glow); color: var(--gold); border-color: var(--border); }
+.filter-input {
+  background: var(--dark2); border: 1px solid var(--border-dim); color: var(--text);
+  font-family: 'Barlow', sans-serif; font-size: 12px; padding: 4px 10px;
+  border-radius: 4px; outline: none; width: 120px;
+}
+.filter-input:focus { border-color: var(--border); }
+
+/* Scrollable fills area */
+.fills-scroll { max-height: 380px; overflow-y: auto; }
+.fills-scroll::-webkit-scrollbar { width: 4px; }
+.fills-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 32px; color: var(--text-dim); font-size: 13px; }
+
+/* Badge */
+.badge {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 2px;
+  background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(240,192,64,0.2);
+}
+
+/* Two col layout */
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a href="/index.html" style="text-decoration:none;"><div class="sb-logo" style="cursor:pointer;">
+    <div class="sb-logo-wordmark">TALON TRADER<br>FUNDING</div>
+    <div class="sb-logo-sub">TRADER PORTAL</div>
+  </div></a>
+  <div class="sb-account">
+    <div class="sb-account-label">Active Account</div>
+    <select class="sb-account-select" id="acct-switcher" onchange="switchAccount(this.value)">
+      <option value="">— Select Account —</option>
+    </select>
+    <div class="sb-status-row">
+      <div class="sb-status-dot" id="sb-dot"></div>
+      <div class="sb-status-text" id="sb-status-text">Connecting...</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">Overview</div>
+    <a class="sb-link" href="/index.html"><span class="sb-link-icon">🏠</span> Home</a>
+    <a class="sb-link" href="/dashboard.html"><span class="sb-link-icon">▦</span> Dashboard</a>
+    <a class="sb-link active" href="/trade-history.html"><span class="sb-link-icon">📈</span> Trade History</a>
+    <a class="sb-link" href="#"><span class="sb-link-icon">📊</span> Statistics</a>
+    <div class="sb-section-label">Account</div>
+    <a class="sb-link" href="#"><span class="sb-link-icon">💰</span> Payouts</a>
+    <a class="sb-link" href="#"><span class="sb-link-icon">⚡</span> Eval Progress</a>
+    <a class="sb-link" href="#"><span class="sb-link-icon">🏆</span> Funded Status</a>
+    <div class="sb-section-label">Tools</div>
+    <a class="sb-link" href="#"><span class="sb-link-icon">🔁</span> OrderClone</a>
+    <a class="sb-link" href="#"><span class="sb-link-icon">⚙️</span> Settings</a>
+    <div class="sb-section-label">Support</div>
+    <a class="sb-link" href="#"><span class="sb-link-icon">📋</span> Rules &amp; FAQ</a>
+    <a class="sb-link" href="#"><span class="sb-link-icon">💬</span> Support Chat</a>
+    
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-footer-firm" id="sb-firm">—</div>
+    <div id="sb-last-update" style="margin-top:3px;">—</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">TRADE HISTORY</div>
+      <div class="topbar-acct" id="topbar-acct">—</div>
+    </div>
+    <div class="topbar-right">
+      <div class="timestamp" id="live-timestamp">—</div>
+      <div class="status-pill" id="status-pill">
+        <div class="status-pill-dot"></div>
+        <span id="status-pill-text">OFFLINE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Summary Stats -->
+    <div class="summary-row">
+      <div class="stat-card highlight">
+        <div class="stat-label">Total PnL</div>
+        <div class="stat-value" id="stat-total-pnl">—</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Today's PnL</div>
+        <div class="stat-value" id="stat-today-pnl">—</div>
+        <div class="stat-sub">Current session</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Trades</div>
+        <div class="stat-value" id="stat-total-trades">—</div>
+        <div class="stat-sub">All fills</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="stat-win-rate">—</div>
+        <div class="stat-sub">Profitable trades</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Trade</div>
+        <div class="stat-value" id="stat-avg-trade">—</div>
+        <div class="stat-sub">Per fill</div>
+      </div>
+    </div>
+
+    <!-- Daily Summary + Account Selector -->
+    <div class="row-2">
+
+      <!-- Daily PnL Summary -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Daily PnL Summary</span>
+          <span class="badge" id="daily-count-badge">0 days</span>
+        </div>
+        <div class="fills-scroll">
+          <table class="daily-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Trades</th>
+                <th>PnL</th>
+                <th style="width:160px">Bar</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <tr><td colspan="5" class="empty-state">No daily data yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Account Overview -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Select Account</span>
+        </div>
+        <div style="padding:16px; display:flex; flex-direction:column; gap:10px;" id="acct-cards-area">
+          <div class="empty-state">Connecting to Rithmic...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- All Fills Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">All Fills</span>
+        <div class="panel-actions">
+          <div class="filter-bar">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn" onclick="setFilter('LONG',this)">Long</button>
+            <button class="filter-btn" onclick="setFilter('SHORT',this)">Short</button>
+            <button class="filter-btn" onclick="setFilter('win',this)">Winners</button>
+            <button class="filter-btn" onclick="setFilter('loss',this)">Losers</button>
+            <input class="filter-input" type="text" placeholder="Symbol..." id="sym-filter" oninput="applyFilters()">
+          </div>
+          <button class="btn btn-gold" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+      <div class="fills-scroll">
+        <table class="fills-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Symbol</th>
+              <th>Side</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>PnL</th>
+              <th>Account</th>
+            </tr>
+          </thead>
+          <tbody id="fills-tbody">
+            <tr><td colspan="7" class="empty-state">No fills yet — trades will appear here as they happen</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:10px 16px; border-top:1px solid var(--border-dim); display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:11px; color:var(--text-dim);" id="fills-count">0 fills</div>
+        <div style="font-size:11px; color:var(--text-dim);" id="fills-filtered">showing all</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────
+const TALON_SERVER = '';
+
+// ── State ────────────────────────────────────────────────────────────
+let allAccounts  = {};
+let selectedId   = null;
+let allFills     = [];
+let activeFilter = 'all';
+
+// ── Helpers ──────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmt$(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  const abs = Math.abs(v);
+  const str = '$' + abs.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return v < 0 ? '-' + str : str;
+}
+
+function fmtDate(isoStr) {
+  if (!isoStr) return '—';
+  return isoStr.substr(0, 10);
+}
+
+// ── Status ────────────────────────────────────────────────────────────
+function setStatus(connected, text) {
+  const pill  = $('status-pill');
+  const ptext = $('status-pill-text');
+  const dot   = $('sb-dot');
+  const stxt  = $('sb-status-text');
+  if (connected) {
+    pill.className = 'status-pill live';
+    dot.className  = 'sb-status-dot live';
+  } else {
+    pill.className = 'status-pill';
+    dot.className  = 'sb-status-dot';
+  }
+  if (ptext) ptext.textContent = text || (connected ? 'LIVE' : 'OFFLINE');
+  if (stxt)  stxt.textContent  = connected ? 'Connected to Rithmic' : (text || 'Disconnected');
+}
+
+// ── Account switcher ─────────────────────────────────────────────────
+function buildSwitcher(accounts) {
+  const sel = $('acct-switcher');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select Account —</option>';
+  accounts.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.account_id;
+    opt.textContent = a.account_id;
+    if (a.account_id === selectedId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (!selectedId && accounts.length) {
+    // Don't auto-select — let user pick
+  }
+}
+
+function switchAccount(aid) {
+  if (!aid) {
+    selectedId = null;
+    $('topbar-acct').textContent = '—';
+    renderAccountCards();
+    return;
+  }
+  selectedId = aid;
+  $('topbar-acct').textContent = aid;
+  fetch(TALON_SERVER + '/api/account/' + aid + '/select', {method:'POST'}).catch(()=>{});
+  loadFillsForAccount(aid);
+  renderAccountCards();
+  updateStats();
+}
+
+// ── Account cards ────────────────────────────────────────────────────
+function renderAccountCards() {
+  const area = $('acct-cards-area');
+  if (!area) return;
+  const ids = Object.keys(allAccounts);
+  if (!ids.length) {
+    area.innerHTML = '<div class="empty-state">Connecting to Rithmic...</div>';
+    return;
+  }
+  area.innerHTML = ids.map(aid => {
+    const a   = allAccounts[aid];
+    const sel = aid === selectedId;
+    const pnl = a.day_pnl || 0;
+    const cls = pnl > 0 ? 'pnl-pos' : pnl < 0 ? 'pnl-neg' : '';
+    return `<div onclick="switchAccount('${aid}')" style="
+        background:var(--dark2); border:1px solid ${sel ? 'var(--gold)' : 'var(--border-dim)'};
+        border-radius:4px; padding:12px 14px; cursor:pointer;
+        ${sel ? 'background:var(--gold-glow)' : ''}; transition:all 0.15s;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;">${aid}</span>
+        ${sel ? '<span style="font-size:10px;color:var(--gold);font-weight:700;">SELECTED</span>' : ''}
+      </div>
+      <div style="display:flex;gap:20px;">
+        <div>
+          <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;">Balance</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">${fmt$(a.balance)}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;">Day PnL</div>
+          <div class="${cls}" style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;">${fmt$(pnl)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Load fills ────────────────────────────────────────────────────────
+async function loadFillsForAccount(aid) {
+  try {
+    const r = await fetch(TALON_SERVER + '/api/account/fills?account_id=' + aid);
+    if (r.ok) {
+      const fills = await r.json();
+      // Merge with any existing fills for this account
+      const existingOtherAcct = allFills.filter(f => f.account !== aid);
+      allFills = [...existingOtherAcct, ...fills];
+      renderFills();
+      renderDailySummary();
+      updateStats();
+    }
+  } catch(e) {}
+}
+
+// ── Filters ───────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  renderFills();
+}
+
+function getFilteredFills() {
+  const symFilter = ($('sym-filter')?.value || '').toUpperCase().trim();
+  const accountFills = selectedId
+    ? allFills.filter(f => f.account === selectedId || !f.account)
+    : allFills;
+
+  return accountFills.filter(f => {
+    if (symFilter && !f.symbol?.toUpperCase().includes(symFilter)) return false;
+    if (activeFilter === 'LONG'  && f.side !== 'LONG')  return false;
+    if (activeFilter === 'SHORT' && f.side !== 'SHORT') return false;
+    if (activeFilter === 'win'   && (f.pnl || 0) <= 0)  return false;
+    if (activeFilter === 'loss'  && (f.pnl || 0) >= 0)  return false;
+    return true;
+  });
+}
+
+// ── Render fills ──────────────────────────────────────────────────────
+function renderFills() {
+  const tbody = $('fills-tbody');
+  if (!tbody) return;
+  const filtered = getFilteredFills();
+  const countEl    = $('fills-count');
+  const filteredEl = $('fills-filtered');
+  if (countEl) countEl.textContent = allFills.length + ' fills total';
+  if (filteredEl) filteredEl.textContent = filtered.length === allFills.length
+    ? 'showing all' : 'showing ' + filtered.length;
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No fills match the current filter</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(f => {
+    const pnlCls  = (f.pnl || 0) >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const sideCls = f.side === 'LONG' ? 'side-long' : 'side-short';
+    return `<tr>
+      <td style="color:var(--text-muted);font-size:11px;">${f.time || '—'}</td>
+      <td><span class="sym">${f.symbol || '—'}</span></td>
+      <td><span class="${sideCls}">${f.side || '—'}</span></td>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-weight:600;">${f.qty || '—'}</td>
+      <td style="font-family:'Barlow Condensed',sans-serif;">$${f.price ? f.price.toFixed(2) : '—'}</td>
+      <td class="${pnlCls}">${f.pnl !== undefined ? fmt$(f.pnl) : '—'}</td>
+      <td style="font-size:11px;color:var(--text-muted);">${f.account || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Daily summary ─────────────────────────────────────────────────────
+function renderDailySummary() {
+  const tbody = $('daily-tbody');
+  if (!tbody) return;
+  const fills = selectedId ? allFills.filter(f => f.account === selectedId) : allFills;
+
+  // Group by date
+  const byDay = {};
+  fills.forEach(f => {
+    const date = f.time ? f.time.substr(0, 10) : 'Today';
+    if (!byDay[date]) byDay[date] = { trades: 0, pnl: 0, wins: 0 };
+    byDay[date].trades++;
+    byDay[date].pnl += f.pnl || 0;
+    if ((f.pnl || 0) > 0) byDay[date].wins++;
+  });
+
+  const days = Object.entries(byDay).sort((a,b) => b[0].localeCompare(a[0]));
+  const badge = $('daily-count-badge');
+  if (badge) badge.textContent = days.length + ' day' + (days.length !== 1 ? 's' : '');
+
+  if (!days.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No daily data yet</td></tr>';
+    return;
+  }
+
+  const maxPnl = Math.max(...days.map(d => Math.abs(d[1].pnl)), 1);
+  tbody.innerHTML = days.map(([date, d]) => {
+    const pct     = Math.min(100, (Math.abs(d.pnl) / maxPnl) * 100);
+    const pos     = d.pnl >= 0;
+    const pnlCls  = pos ? 'pnl-pos' : 'pnl-neg';
+    const barCls  = pos ? '' : ' neg';
+    const winRate = d.trades > 0 ? Math.round((d.wins / d.trades) * 100) : 0;
+    return `<tr>
+      <td class="day-date">${date}</td>
+      <td style="color:var(--text-muted);">${d.trades}</td>
+      <td class="${pnlCls}" style="font-family:'Barlow Condensed',sans-serif;font-weight:700;">${fmt$(d.pnl)}</td>
+      <td class="day-bar-cell">
+        <div class="day-bar-track">
+          <div class="day-bar-fill${barCls}" style="width:${pct}%"></div>
+        </div>
+      </td>
+      <td style="font-size:11px;color:var(--text-muted);">${winRate}% win rate</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────
+function updateStats() {
+  const fills = selectedId ? allFills.filter(f => f.account === selectedId) : allFills;
+  const totalPnl  = fills.reduce((s, f) => s + (f.pnl || 0), 0);
+  const wins      = fills.filter(f => (f.pnl || 0) > 0).length;
+  const winRate   = fills.length > 0 ? Math.round((wins / fills.length) * 100) : 0;
+  const avgTrade  = fills.length > 0 ? totalPnl / fills.length : 0;
+
+  // Today's PnL from account data
+  const todayPnl = selectedId && allAccounts[selectedId]
+    ? (allAccounts[selectedId].day_pnl || 0)
+    : 0;
+
+  function setStatVal(id, val, isNum) {
+    const el = $(id);
+    if (!el) return;
+    if (isNum) {
+      el.textContent = fmt$(val);
+      el.className = 'stat-value ' + (val > 0 ? 'pos' : val < 0 ? 'neg' : '');
+    } else {
+      el.textContent = val;
+    }
+  }
+
+  setStatVal('stat-total-pnl',   totalPnl,  true);
+  setStatVal('stat-today-pnl',   todayPnl,  true);
+  setStatVal('stat-total-trades', fills.length, false);
+  $('stat-win-rate').textContent  = fills.length ? winRate + '%' : '—';
+  $('stat-win-rate').className    = 'stat-value';
+  setStatVal('stat-avg-trade',   avgTrade,  true);
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────
+function exportCSV() {
+  const fills = getFilteredFills();
+  if (!fills.length) { alert('No fills to export'); return; }
+  const header = 'Time,Symbol,Side,Qty,Price,PnL,Account\n';
+  const rows = fills.map(f =>
+    `"${f.time||''}","${f.symbol||''}","${f.side||''}","${f.qty||''}","${f.price||''}","${f.pnl||''}","${f.account||''}"`
+  ).join('\n');
+  const blob = new Blob([header + rows], {type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'talon-trade-history-' + (selectedId || 'all') + '-' + new Date().toISOString().substr(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Socket.IO ─────────────────────────────────────────────────────────
+function connectSocket() {
+  const socket = io(TALON_SERVER, {
+    transports: ['websocket', 'polling'],
+    reconnection: true, reconnectionDelay: 3000, reconnectionAttempts: 99,
+  });
+
+  socket.on('connect', () => {
+    setStatus(true, 'LIVE');
+    socket.emit('request_snapshot');
+  });
+  socket.on('disconnect', () => setStatus(false, 'OFFLINE'));
+  socket.on('connect_error', () => setStatus(false, 'RECONNECTING...'));
+
+  socket.on('status_change', d => {
+    if (d.connected) {
+      setStatus(true, 'LIVE');
+      if (d.firm_name) { const el = $('sb-firm'); if(el) el.textContent = d.firm_name; }
+    } else {
+      setStatus(false, d.connecting ? 'CONNECTING...' : 'OFFLINE');
+    }
+  });
+
+  socket.on('account_update', d => {
+    if (d.account_id) {
+      allAccounts[d.account_id] = d;
+      renderAccountCards();
+      updateStats();
+      if (d.last_update) {
+        const tsEl = $('live-timestamp');
+        if (tsEl) tsEl.textContent = 'Updated ' + d.last_update.substr(11,8) + ' UTC';
+        const sbUpd = $('sb-last-update');
+        if (sbUpd) sbUpd.textContent = d.last_update.substr(11,8);
+      }
+      if (d.firm_name) { const el = $('sb-firm'); if(el) el.textContent = d.firm_name; }
+    }
+  });
+
+  socket.on('accounts_discovered', d => {
+    const accts = d.accounts || [];
+    if (!accts.length) return;
+    buildSwitcher(accts);
+    if (d.firm_name) { const el = $('sb-firm'); if(el) el.textContent = d.firm_name; }
+    renderAccountCards();
+  });
+
+  socket.on('new_fill', fill => {
+    allFills.unshift(fill);
+    if (allFills.length > 500) allFills = allFills.slice(0, 500);
+    renderFills();
+    renderDailySummary();
+    updateStats();
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+async function boot() {
+  // Load accounts
+  try {
+    const r = await fetch(TALON_SERVER + '/api/accounts');
+    if (r.ok) {
+      const accts = await r.json();
+      accts.forEach(a => { allAccounts[a.account_id] = a; });
+      buildSwitcher(accts);
+      renderAccountCards();
+    }
+  } catch(e) {}
+
+  connectSocket();
+}
+
+boot();
+</script>
+</body>
+</html>
