@@ -359,88 +359,34 @@ async def _connect(cfg):
         socketio.emit("activity_log", {"message": f"✗ Failed: {e}", "level": "error"})
         return False
 
-# ── Background PnL poller ─────────────────────────────────────────────────────
+# ── Background heartbeat ──────────────────────────────────────────────────────
 def _poll_loop():
     """
-    Polls account summary as fallback / supplement to streaming.
-    500ms when open positions exist, 5s when flat.
-    Tries list_account_summary() (pnl plant) first;
-    if pnl plant is down, logs a one-time warning and stops polling.
+    Streaming-only mode — no list_account_summary() calls.
+    Data arrives via on_account_pnl_update / on_instrument_pnl_update callbacks.
+    This loop only pushes a keepalive status ping every 30s so the dashboard
+    knows the server is still alive when there is no market activity.
     """
-    FAST, SLOW = 0.5, 5.0
-    last_poll  = 0.0
-    pnl_warn_shown = False
+    PING_INTERVAL = 30.0
+    last_ping = 0.0
+
+    logger.info("Running in streaming-only mode (no polling). "
+                "Data will update via Rithmic push callbacks.")
 
     while True:
-        time.sleep(0.1)
+        time.sleep(1.0)
         if not conn_state["connected"] or _client is None:
             continue
-        now     = time.time()
-        has_pos = any(d["net_qty"] != 0 for d in accounts.values())
-        if now - last_poll < (FAST if has_pos else SLOW):
+        now = time.time()
+        if now - last_ping < PING_INTERVAL:
             continue
-        last_poll = now
+        last_ping = now
+        # Push current state for any accounts that have data
+        for aid, d in list(accounts.items()):
+            if d.get("balance", 0) != 0:
+                _push(aid)
 
-        # If pnl plant is not up, polling via list_account_summary won't work
-        if not conn_state.get("pnl_plant_up", False):
-            if not pnl_warn_shown:
-                logger.warning("PnL plant not up — balance polling unavailable. "
-                               "Data will update via order-fill events only.")
-                pnl_warn_shown = True
-            continue
-
-        try:
-            plant = _client.plants.get("order")
-            if not plant or not getattr(plant, "accounts", None):
-                continue
-            raccts = plant.accounts
-            for ra in raccts:
-                aid = getattr(ra, "account_id", "") or ""
-                if not aid:
-                    continue
-                if aid not in accounts:
-                    accounts[aid] = _new_acct(aid)
-                    _push_list()
-                try:
-                    sums = run_async(
-                        _client.list_account_summary()
-                        if len(raccts) == 1
-                        else _client.list_account_summary(account_id=aid))
-                    for s in (sums or []):
-                        if getattr(s, "account_id", "") != aid:
-                            continue
-                        a    = accounts[aid]
-                        bal  = safe_float(getattr(s, "account_balance",        0))
-                        opnl = safe_float(getattr(s, "open_position_pnl",      0))
-                        dpnl = safe_float(getattr(s, "day_pnl",                0))
-                        cpnl = safe_float(getattr(s, "closed_position_pnl",    0))
-                        nqty = int(getattr(s, "net_quantity",                   0) or 0)
-                        mar  = safe_float(getattr(s, "margin_balance",         0))
-                        bpow = safe_float(getattr(s, "available_buying_power", 0))
-                        altv = safe_float(getattr(s, "min_account_balance",    0))
-
-                        if a["starting_balance"] == 0.0 and bal > 0:
-                            a["starting_balance"] = bal
-
-                        a.update(balance=bal, equity=bal + opnl,
-                                 day_pnl=dpnl, day_closed_pnl=cpnl,
-                                 open_pnl=opnl, net_qty=nqty,
-                                 margin_balance=mar, buying_power=bpow,
-                                 last_update=datetime.now().isoformat())
-
-                        if altv > 0:
-                            a["altv"] = altv
-                            if a["starting_balance"] > 0:
-                                a["daily_dd_used"] = max(0.0, a["starting_balance"] - bal)
-
-                        _append_history(a)
-                        _push(aid)
-                except Exception as e:
-                    logger.debug(f"Poll [{aid}]: {e}")
-        except Exception as e:
-            logger.debug(f"Poll loop outer: {e}")
-
-threading.Thread(target=_poll_loop, daemon=True, name="PnLPoller").start()
+threading.Thread(target=_poll_loop, daemon=True, name="Heartbeat").start()
 
 # ── HTTP Routes ───────────────────────────────────────────────────────────────
 @app.route("/")
